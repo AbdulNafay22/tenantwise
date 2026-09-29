@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 pydantic
-sentence-transformers
+fastembed
 numpy
 google-genai
 python-dotenv

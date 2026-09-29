@@ -16,7 +16,7 @@ Toronto Metropolitan University students face real, documented landlord issues -
 
 ## Architecture
 
-- **Backend**: FastAPI (`backend/app`). A local embedding model (`sentence-transformers`, `all-MiniLM-L6-v2`) retrieves the most relevant corpus entries for a tenant's situation; Gemini generates the plain-language explanation from that retrieved context, always citing section numbers.
+- **Backend**: FastAPI (`backend/app`). A local embedding model (`sentence-transformers/all-MiniLM-L6-v2`, run via `fastembed`'s ONNX Runtime rather than PyTorch -- see Status below for why) retrieves the most relevant corpus entries for a tenant's situation; Gemini generates the plain-language explanation from that retrieved context, always citing section numbers.
 - **Frontend**: React + TypeScript, Vite (`frontend/`). A single-page chat UI: describe a situation, get a cited plain-language answer, and optionally generate a draft LTB application PDF from that same answer (collects tenant/landlord name and address once, remembers them for the rest of the session).
 - **Data**: `backend/app/data/rta_corpus.json`, sourced from tribunalsontario.ca's official Interpretation Guidelines and Guide to the RTA (see each entry's `source_url`).
 
@@ -32,7 +32,7 @@ python -m pytest -v
 uvicorn app.main:app --reload
 ```
 
-Note: the first test run downloads the `all-MiniLM-L6-v2` embedding model from Hugging Face (a few hundred MB, cached after that). This needs normal internet access -- it will not work in a network-restricted sandbox, but works fine in a Codespace or CI runner.
+Note: the first test run downloads the `all-MiniLM-L6-v2` ONNX model (~90MB, cached after that). This needs normal internet access -- it will not work in a network-restricted sandbox, but works fine in a Codespace, CI runner, or Render.
 
 ## Running the frontend locally
 
@@ -50,9 +50,9 @@ Requires the backend running (see above) on `http://localhost:8000` by default.
 - [x] Real, sourced RTA corpus (rent deposits, entry, maintenance, tenant rights/harassment)
 - [x] RAG retrieval + cited Gemini answers, with an eval harness and test suite (68.2% -> passing after a corpus-vocabulary fix, see git history)
 - [x] LTB form auto-fill pipeline (retrieval -> Gemini-drafted description -> real T2/T6 PDF filled with pypdf), tested against a synthetic fixture form
-- [x] Real T2/T6 AcroForm field names wired into `backend/app/services/form_mapping.py` (captured 2026-09-27 via `scripts/inspect_form_fields.py` from the actual tribunalsontario.ca PDFs). **Verified end-to-end against the real forms**: `POST /generate-form` was run against the actual T2.pdf with a live Gemini call, and the resulting PDF's AcroForm field values were confirmed correct (tenant/landlord names, address, postal code, and a properly cited Gemini-drafted description all present). Name splitting and address handling remain intentionally conservative -- see the caveats documented at the top of `form_mapping.py`.
-- [x] Frontend chat UI (`frontend/`, React + TypeScript + Vite): chat interface for `/ask`, with a per-answer "Draft an LTB application" flow that calls `/generate-form` and downloads the resulting PDF.
-- [ ] Deploy
+- [x] Real T2/T6 AcroForm field names wired into `backend/app/services/form_mapping.py` (captured 2026-09-27 via `scripts/inspect_form_fields.py` from the actual tribunalsontario.ca PDFs). **Verified end-to-end against the real forms, including visually**: generated a real T6 PDF through the running app (chat -> "Draft an LTB application" -> `/generate-form`) and confirmed in an actual PDF viewer that tenant name/address/province, landlord name, and a properly cited Gemini-drafted description all render correctly. Name splitting and address handling remain intentionally conservative -- see the caveats documented at the top of `form_mapping.py`.
+- [x] Frontend chat UI (`frontend/`, React + TypeScript + Vite): chat interface for `/ask`, with a per-answer "Draft an LTB application" flow that calls `/generate-form` and downloads the resulting PDF. Verified working end-to-end in a real browser against the backend running in GitHub Codespaces.
+- [~] Deploy -- backend on Render, frontend on Vercel. First Render deploy hit "Out of memory (used over 512Mi)" on the free tier: `sentence-transformers` pulls in PyTorch, whose own baseline footprint (independent of the model itself) doesn't fit in 512MB. Switched the embedding runtime to `fastembed` (ONNX Runtime, no PyTorch) for the exact same model and near-identical embeddings -- same retrieval quality, verified by re-running the eval gate, at a fraction of the memory. CORS is also now configurable via an `ALLOWED_ORIGINS` env var instead of hardcoded wide open, for the production frontend origin.
 
 ## Disclaimer
 
