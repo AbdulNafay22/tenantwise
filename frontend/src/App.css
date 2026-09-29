@@ -2,82 +2,197 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 100svh;
+  /* min-height:0 overrides the flex default of min-height:auto, which would
+     otherwise refuse to shrink below content size -- needed for .chat-log's
+     overflow-y:auto to actually engage instead of the whole page growing
+     past #root's fixed height (see index.css) and pushing the composer off. */
+  min-height: 0;
   text-align: left;
-  padding: 0 20px;
-  max-width: 720px;
+  padding: 0 24px;
+  max-width: 760px;
   margin: 0 auto;
   width: 100%;
-  box-sizing: border-box;
 }
 
+/* ---------- Header ---------- */
+
 .app-header {
-  padding: 24px 0 8px;
+  padding: 40px 0 4px;
+  flex-shrink: 0;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px !important;
 }
 
 .app-header h1 {
-  font-size: 32px;
-  margin: 0 0 4px;
-  letter-spacing: -0.5px;
+  font-size: 38px;
 }
 
-.app-header p {
+.app-tagline {
+  font-size: 16px;
+  line-height: 1.5;
   color: var(--text);
-  font-size: 15px;
+  margin-top: 12px !important;
+  max-width: 54ch;
 }
+
+.trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.trust-row li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trust-row li::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ---------- Disclaimer ---------- */
 
 .disclaimer-banner {
   font-size: 13px;
   color: var(--text);
   background: var(--code-bg);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 22px 0 24px;
+  line-height: 1.5;
+  flex-shrink: 0;
 }
+
+.disclaimer-banner strong {
+  color: var(--text-h);
+}
+
+/* ---------- Chat log & empty state ---------- */
 
 .chat-log {
   flex: 1;
+  /* Without this, a flex item won't shrink below its content's natural height,
+     so overflow-y:auto never actually engages -- the log just grows past the
+     fixed-height .app instead of scrolling, pushing the composer off-screen. */
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   overflow-y: auto;
   padding-bottom: 16px;
 }
 
 .empty-state {
-  color: var(--text);
-  font-size: 15px;
-  padding: 24px 0;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  margin: 4px 0 20px;
 }
+
+.empty-state h2 {
+  font-size: 19px;
+  margin-bottom: 8px !important;
+}
+
+.empty-state > p {
+  color: var(--text);
+  font-size: 14px;
+  margin-bottom: 18px !important;
+}
+
+.example-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.example-chip {
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text-h);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.example-chip:hover:not(:disabled) {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.example-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Messages ---------- */
 
 .message {
-  border-radius: 12px;
-  padding: 12px 16px;
-  max-width: 90%;
-  line-height: 1.5;
+  border-radius: 14px;
+  padding: 14px 18px;
+  max-width: 88%;
 }
 
-.message p {
+.message-text {
   white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.message-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 6px !important;
 }
 
 .message-user {
   align-self: flex-end;
   background: var(--accent);
   color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message-user .message-text {
+  color: white;
 }
 
 .message-assistant {
   align-self: flex-start;
-  background: var(--code-bg);
+  background: var(--bg-raised);
   border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  border-bottom-left-radius: 4px;
 }
 
 .message-error {
   align-self: flex-start;
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-border);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
   color: var(--text-h);
 }
 
@@ -98,7 +213,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--text);
+  background: var(--accent);
   opacity: 0.5;
   animation: typing-bounce 1.2s infinite ease-in-out;
 }
@@ -131,45 +246,73 @@
   }
 }
 
+/* ---------- Citations ---------- */
+
 .citations {
   list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   font-size: 13px;
-}
-
-.citations li {
-  margin-top: 4px;
 }
 
 .citations a {
   color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.citations a:hover {
+  text-decoration: underline;
+}
+
+.citation-sections {
+  color: var(--text);
+  font-size: 12px;
+  margin-left: 2px;
 }
 
 .citation-snippet {
-  margin: 4px 0 0;
+  margin: 4px 0 0 !important;
   color: var(--text);
-  font-size: 12px;
+  font-size: 12.5px;
   font-style: italic;
-  line-height: 1.4;
+  line-height: 1.45;
 }
+
+/* ---------- Buttons shared by chat + form panel ---------- */
 
 .secondary-button,
 .form-panel button {
   font: inherit;
+  font-size: 14px;
+  font-weight: 500;
   border-radius: 8px;
   border: 1px solid var(--accent-border);
   background: transparent;
   color: var(--accent);
-  padding: 6px 12px;
+  padding: 8px 14px;
   cursor: pointer;
-  margin-top: 12px;
+  margin-top: 14px;
+  transition: background 0.15s ease;
+}
+
+.secondary-button:hover,
+.form-panel button[type="button"]:hover {
+  background: var(--accent-bg);
 }
 
 .form-panel button[type="submit"] {
   background: var(--accent);
   color: white;
   border: none;
+}
+
+.form-panel button[type="submit"]:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
 
 .form-panel button:disabled {
@@ -187,32 +330,38 @@
 .form-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 12px;
-  padding-top: 12px;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px solid var(--border);
 }
 
 .form-panel label {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   font-size: 13px;
   color: var(--text);
 }
 
 .form-panel input {
   font: inherit;
-  padding: 8px 10px;
-  border-radius: 6px;
+  padding: 9px 12px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-h);
 }
 
+.form-panel input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
 .form-panel-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
@@ -227,38 +376,97 @@
 }
 
 .error-text {
-  color: #c0392b;
+  color: var(--danger);
   font-size: 13px;
 }
 
+/* ---------- Composer ---------- */
+
 .composer {
   display: flex;
-  gap: 8px;
-  padding: 16px 0 24px;
+  gap: 10px;
+  padding: 18px 0 28px;
   border-top: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
 }
 
 .composer input {
   flex: 1;
   font: inherit;
-  padding: 10px 14px;
+  font-size: 15px;
+  padding: 12px 16px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--bg-raised);
   color: var(--text-h);
+}
+
+.composer input:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-bg);
 }
 
 .composer button {
   font: inherit;
+  font-weight: 600;
   border-radius: 999px;
   border: none;
   background: var(--accent);
   color: white;
-  padding: 10px 20px;
+  padding: 12px 22px;
   cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.composer button:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
 
 .composer button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 640px) {
+  .app {
+    padding: 0 16px;
+  }
+
+  .app-header {
+    padding: 28px 0 4px;
+  }
+
+  .app-header h1 {
+    font-size: 30px;
+  }
+
+  .app-tagline {
+    font-size: 14px;
+  }
+
+  .trust-row {
+    font-size: 12px;
+  }
+
+  .example-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .message {
+    max-width: 100%;
+    padding: 12px 14px;
+  }
+
+  .composer {
+    padding: 14px 0 20px;
+    gap: 8px;
+  }
+
+  .composer button {
+    padding: 12px 16px;
+  }
 }
