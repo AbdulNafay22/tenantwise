@@ -18,6 +18,13 @@ class Citation(BaseModel):
     source_url: str
 
 
+class GenerateFormRequest(BaseModel):
+    situation: str = Field(..., min_length=10, max_length=4000)
+    tenant_name: str = Field(..., min_length=1, max_length=200)
+    tenant_address: str = Field(..., min_length=1, max_length=300)
+    landlord_name: str = Field(..., min_length=1, max_length=200)
+
+
 class AskResponse(BaseModel):
     answer: str
     citations: list[Citation]

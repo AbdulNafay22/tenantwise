@@ -17,7 +17,7 @@ Toronto Metropolitan University students face real, documented landlord issues -
 ## Architecture
 
 - **Backend**: FastAPI (`backend/app`). A local embedding model (`sentence-transformers`, `all-MiniLM-L6-v2`) retrieves the most relevant corpus entries for a tenant's situation; Gemini generates the plain-language explanation from that retrieved context, always citing section numbers.
-- **Frontend**: React + TypeScript (`frontend/`) -- in progress.
+- **Frontend**: React + TypeScript, Vite (`frontend/`). A single-page chat UI: describe a situation, get a cited plain-language answer, and optionally generate a draft LTB application PDF from that same answer (collects tenant/landlord name and address once, remembers them for the rest of the session).
 - **Data**: `backend/app/data/rta_corpus.json`, sourced from tribunalsontario.ca's official Interpretation Guidelines and Guide to the RTA (see each entry's `source_url`).
 
 ## Running the backend locally
@@ -34,12 +34,24 @@ uvicorn app.main:app --reload
 
 Note: the first test run downloads the `all-MiniLM-L6-v2` embedding model from Hugging Face (a few hundred MB, cached after that). This needs normal internet access -- it will not work in a network-restricted sandbox, but works fine in a Codespace or CI runner.
 
+## Running the frontend locally
+
+```bash
+cd frontend
+npm install
+cp .env.example .env  # only needed if your backend isn't on localhost:8000
+npm run dev
+```
+
+Requires the backend running (see above) on `http://localhost:8000` by default.
+
 ## Status
 
 - [x] Real, sourced RTA corpus (rent deposits, entry, maintenance, tenant rights/harassment)
-- [x] RAG retrieval + cited Gemini answers, with an eval harness and test suite
-- [ ] LTB form auto-fill (PDF generation) -- next
-- [ ] Frontend chat UI -- next
+- [x] RAG retrieval + cited Gemini answers, with an eval harness and test suite (68.2% -> passing after a corpus-vocabulary fix, see git history)
+- [x] LTB form auto-fill pipeline (retrieval -> Gemini-drafted description -> real T2/T6 PDF filled with pypdf), tested against a synthetic fixture form
+- [x] Real T2/T6 AcroForm field names wired into `backend/app/services/form_mapping.py` (captured 2026-09-27 via `scripts/inspect_form_fields.py` from the actual tribunalsontario.ca PDFs). **Verified end-to-end against the real forms**: `POST /generate-form` was run against the actual T2.pdf with a live Gemini call, and the resulting PDF's AcroForm field values were confirmed correct (tenant/landlord names, address, postal code, and a properly cited Gemini-drafted description all present). Name splitting and address handling remain intentionally conservative -- see the caveats documented at the top of `form_mapping.py`.
+- [x] Frontend chat UI (`frontend/`, React + TypeScript + Vite): chat interface for `/ask`, with a per-answer "Draft an LTB application" flow that calls `/generate-form` and downloads the resulting PDF.
 - [ ] Deploy
 
 ## Disclaimer
