@@ -7,6 +7,7 @@ from app.services import llm
 from app.services.vectorstore import VectorStore, get_store
 
 SIMILARITY_FLOOR = 0.25  # below this, retrieved docs are treated as irrelevant noise
+SNIPPET_MAX_CHARS = 220  # keeps the frontend preview short; full text is one click away
 
 PROMPT_TEMPLATE = """You are a plain-language explainer of Ontario tenancy law for students in Toronto. \
 You are NOT a lawyer and must never give individualized legal advice or tell the tenant what to do. \
@@ -38,6 +39,16 @@ def _format_context(docs_with_scores: list[tuple]) -> str:
     return "\n\n".join(blocks)
 
 
+def _make_snippet(text: str, max_chars: int = SNIPPET_MAX_CHARS) -> str:
+    """Truncates a corpus doc's full text to a short preview for the UI, breaking on a
+    word boundary rather than mid-word, with an ellipsis if it was actually cut short."""
+    text = text.strip()
+    if len(text) <= max_chars:
+        return text
+    truncated = text[:max_chars].rsplit(" ", 1)[0]
+    return f"{truncated}…"
+
+
 def answer_situation(situation: str, store: VectorStore | None = None) -> AskResponse:
     store = store or get_store()
     results = store.search(situation, top_k=3)
@@ -60,7 +71,12 @@ def answer_situation(situation: str, store: VectorStore | None = None) -> AskRes
     answer_text = llm.call_gemini(prompt)
 
     citations = [
-        Citation(section_ids=doc.sections, source_name=doc.source_name, source_url=doc.source_url)
+        Citation(
+            section_ids=doc.sections,
+            source_name=doc.source_name,
+            source_url=doc.source_url,
+            snippet=_make_snippet(doc.text),
+        )
         for doc, _score in relevant
     ]
     return AskResponse(answer=answer_text, citations=citations)

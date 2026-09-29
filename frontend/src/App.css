@@ -82,7 +82,53 @@
 }
 
 .message-pending {
-  opacity: 0.6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  height: 10px;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text);
+  opacity: 0.5;
+  animation: typing-bounce 1.2s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot {
+    animation: none;
+    opacity: 0.7;
+  }
 }
 
 .citations {
@@ -98,6 +144,14 @@
 
 .citations a {
   color: var(--accent);
+}
+
+.citation-snippet {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
 }
 
 .secondary-button,

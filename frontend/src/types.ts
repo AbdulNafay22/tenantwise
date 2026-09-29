@@ -4,6 +4,9 @@ export interface Citation {
   section_ids: string[];
   source_name: string;
   source_url: string;
+  /** Short preview of the actual retrieved source text, so the user can see why this
+   * citation is relevant without leaving the page. May be empty for older API responses. */
+  snippet?: string;
 }
 
 export interface AskResponse {

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError, askSituation } from "./api";
 import GenerateFormPanel from "./GenerateFormPanel";
 import type { ChatMessage, TenantInfo } from "./types";
@@ -20,12 +20,26 @@ export default function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [isAsking, setIsAsking] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo>({
     tenant_name: "",
     tenant_address: "",
     landlord_name: "",
   });
   const listEndRef = useRef<HTMLDivElement>(null);
+
+  // The backend runs on Render's free tier, which spins down after 15 minutes idle --
+  // the first request after that can take 50+ seconds to wake back up. Rather than let
+  // the plain "Thinking..." indicator sit there looking stuck, surface a cold-start hint
+  // once a request has been pending a while so it reads as "working" rather than "broken".
+  useEffect(() => {
+    if (!isAsking) {
+      setIsSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setIsSlow(true), 6000);
+    return () => clearTimeout(timer);
+  }, [isAsking]);
 
   async function handleSend(event: React.FormEvent) {
     event.preventDefault();
@@ -94,6 +108,7 @@ export default function App() {
                     {citation.section_ids.length > 0 && (
                       <span> (s. {citation.section_ids.join(", ")})</span>
                     )}
+                    {citation.snippet && <p className="citation-snippet">"{citation.snippet}"</p>}
                   </li>
                 ))}
               </ul>
@@ -111,7 +126,17 @@ export default function App() {
 
         {isAsking && (
           <div className="message message-assistant message-pending">
-            <p>Thinking...</p>
+            <p className="typing-indicator">
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+              <span className="typing-dot" />
+            </p>
+            {isSlow && (
+              <p className="fine-print">
+                Still working -- the server may be waking up from being idle, which can take
+                up to about a minute.
+              </p>
+            )}
           </div>
         )}
 

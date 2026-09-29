@@ -16,6 +16,13 @@ class Citation(BaseModel):
     section_ids: list[str]
     source_name: str
     source_url: str
+    snippet: str = Field(
+        default="",
+        description=(
+            "A short preview of the actual retrieved corpus text this citation is drawn from, "
+            "so a user can see why it's relevant without following the link."
+        ),
+    )
 
 
 class GenerateFormRequest(BaseModel):
