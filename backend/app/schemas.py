@@ -3,12 +3,33 @@
 from pydantic import BaseModel, Field
 
 
+class Turn(BaseModel):
+    """One earlier question/answer pair, sent back by the client for follow-ups."""
+
+    question: str = Field(..., min_length=1, max_length=1000)
+    answer: str = Field(..., min_length=1, max_length=6000)
+
+
 class AskRequest(BaseModel):
     situation: str = Field(
         ...,
         min_length=10,
         max_length=4000,
         description="Plain-language description of the tenant's situation.",
+    )
+    follow_up: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=1000,
+        description=(
+            "A follow-up question about the same situation. When set, the answer builds on "
+            "`situation` and `history` instead of treating this as a new situation."
+        ),
+    )
+    history: list[Turn] = Field(
+        default_factory=list,
+        max_length=6,
+        description="Earlier follow-up questions and answers for this situation, oldest first.",
     )
 
 
@@ -35,6 +56,10 @@ class GenerateFormRequest(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     citations: list[Citation]
+    follow_ups: list[str] = Field(
+        default_factory=list,
+        description="Up to 3 short follow-up questions the tenant might want to ask next.",
+    )
     disclaimer: str = (
         "This is general information about Ontario tenancy law, not legal advice, "
         "and it is not a substitute for speaking with a paralegal, lawyer, or tenant "
