@@ -1,16 +1,18 @@
-// Minimal renderer for the model's answer text: paragraphs, "-"/"*"/"1." lists and
-// **bold**. Deliberately not a full markdown parser -- the answers only use these, and
-// rendering through React elements (not innerHTML) keeps it injection-safe.
+// Minimal renderer for the model's answer text: paragraphs, "-"/"*"/"1." lists,
+// **bold** and *italic*. Deliberately not a full markdown parser -- the answers only
+// use these, and rendering through React elements (not innerHTML) keeps it injection-safe.
 
 function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") ? (
-      <strong key={i}>{part.slice(2, -2)}</strong>
-    ) : (
-      part
-    ),
-  );
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("*") && part.endsWith("*") && part.length > 2) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
 }
 
 const BULLET = /^\s*[-*•]\s+/;
