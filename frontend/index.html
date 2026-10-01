@@ -14,7 +14,14 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap"
       rel="stylesheet"
     />
-    <title>TenantWise</title>
+    <title>TenantWise · Ontario tenant rights, explained</title>
+    <script>
+      // Apply a saved theme choice before first paint so there's no light/dark flash.
+      try {
+        const theme = localStorage.getItem("tenantwise-theme");
+        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

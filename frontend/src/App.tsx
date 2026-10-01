@@ -2,8 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { ApiError, askSituation } from "./api";
 import FormDialog from "./FormDialog";
 import ResultCard from "./ResultCard";
+import ThemeToggle from "./ThemeToggle";
 import {
   ArrowUpIcon,
+  BeakerIcon,
+  BookIcon,
+  CheckIcon,
+  FileIcon,
   DoorIcon,
   GithubIcon,
   LogoMark,
@@ -15,6 +20,8 @@ import type { Exchange, HistoryTurn, TenantInfo, Turn } from "./types";
 import "./App.css";
 
 const REPO_URL = "https://github.com/AbdulNafay22/tenantwise";
+const LTB_URL = "https://tribunalsontario.ca/ltb/";
+const LEGAL_AID_URL = "https://www.legalaid.on.ca/";
 
 const DISCLAIMER =
   "TenantWise provides general information about Ontario tenancy law. It is not legal advice " +
@@ -49,6 +56,14 @@ const STEPS = [
   { title: "Describe it", text: "Explain what's happening in your own words." },
   { title: "Get a cited answer", text: "Plain-language rights, backed by real LTB sources." },
   { title: "Draft the form", text: "Download a pre-filled T2 or T6 application to review." },
+];
+
+// Mirrors the topics in backend/app/data/rta_corpus.json.
+const COVERED = [
+  "Rent deposits and last month's rent",
+  "Landlord entry and notice",
+  "Repairs and maintenance",
+  "Harassment and interference",
 ];
 
 let nextId = 0;
@@ -173,31 +188,47 @@ export default function App() {
       <header className="topbar">
         <div className="container topbar-inner">
           <a className="brand" href="/" aria-label="TenantWise home">
-            <LogoMark size={28} />
-            <span className="brand-name">TenantWise</span>
-            <span className="brand-badge">Ontario</span>
+            <LogoMark size={30} />
+            <span className="brand-text">
+              <span className="brand-name">TenantWise</span>
+              <span className="brand-sub">Ontario tenant rights</span>
+            </span>
           </a>
-          <a
-            className="icon-button"
-            href={REPO_URL}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="View source on GitHub"
-          >
-            <GithubIcon size={18} />
-          </a>
+          <nav className="topnav" aria-label="Main">
+            <a href="#how" className="topnav-link">
+              How it works
+            </a>
+            <a href="#coverage" className="topnav-link">
+              Coverage
+            </a>
+            <span className="topnav-divider" aria-hidden="true" />
+            <a
+              className="icon-button"
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View source on GitHub"
+              title="View source on GitHub"
+            >
+              <GithubIcon size={18} />
+            </a>
+            <ThemeToggle />
+          </nav>
         </div>
       </header>
 
       <main className={`container layout ${hasResults ? "has-results" : ""}`}>
         <section className={`hero ${hasResults ? "hero-compact" : ""}`}>
-          <p className="hero-kicker">For tenants under Ontario's Residential Tenancies Act</p>
+          <p className="hero-badge">
+            <span className="hero-badge-dot" aria-hidden="true" />
+            Residential Tenancies Act, 2006 · Ontario
+          </p>
           <h1>
             Know your rights. <span className="hero-accent">Then act on them.</span>
           </h1>
           <p className="hero-sub">
-            Describe your rental problem and get a plain-language answer grounded in real Landlord
-            and Tenant Board guidance, with every source cited.
+            Describe your rental problem and get a plain-language answer grounded in official
+            Landlord and Tenant Board guidance, with every source cited.
           </p>
 
           <form className="search" onSubmit={handleSubmit}>
@@ -215,10 +246,27 @@ export default function App() {
               <ArrowUpIcon size={18} />
             </button>
           </form>
-          <p className="search-hint">Each situation starts its own conversation. Press Enter to ask, Shift + Enter for a new line.</p>
+          <p className="search-hint">
+            Each situation starts its own conversation. <kbd>Enter</kbd> to ask,{" "}
+            <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line.
+          </p>
+
+          {!hasResults && (
+            <ul className="trust-row">
+              <li>
+                <BookIcon size={16} /> Official LTB guidance
+              </li>
+              <li>
+                <FileIcon size={16} /> Real T2 &amp; T6 forms
+              </li>
+              <li>
+                <BeakerIcon size={16} /> Tested on 22 scenarios
+              </li>
+            </ul>
+          )}
         </section>
 
-        <aside className="how" aria-labelledby="how-heading">
+        <aside className="how" id="how" aria-labelledby="how-heading">
           <h2 id="how-heading" className="section-label">
             How it works
           </h2>
@@ -241,7 +289,7 @@ export default function App() {
 
         <div className="feed">
           {hasResults && (
-            <section className="results" ref={resultsRef} aria-label="Answers">
+            <section className="results" ref={resultsRef} aria-label="Conversations">
               {exchanges.map((exchange, i) => (
                 <ResultCard
                   key={exchange.id}
@@ -278,14 +326,54 @@ export default function App() {
               ))}
             </div>
           </section>
+
+          <section className="coverage" id="coverage" aria-labelledby="coverage-heading">
+            <h2 id="coverage-heading" className="section-label">
+              Coverage
+            </h2>
+            <div className="coverage-card">
+              <div>
+                <h3>What TenantWise knows today</h3>
+                <ul className="coverage-list">
+                  {COVERED.map((item) => (
+                    <li key={item}>
+                      <CheckIcon size={15} /> {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3>Not covered yet</h3>
+                <p className="coverage-text">
+                  Rent increases, eviction notices (N4, N12), and roommate disputes. For these,
+                  TenantWise will say it can't answer rather than guess.
+                </p>
+              </div>
+            </div>
+          </section>
         </div>
       </main>
 
       <footer className="site-footer">
-        <div className="container">
-          <p>
+        <div className="container footer-inner">
+          <div className="footer-brand">
+            <LogoMark size={22} />
+            <span className="brand-name">TenantWise</span>
+          </div>
+          <p className="footer-disclaimer">
             <strong>Not legal advice.</strong> {DISCLAIMER}
           </p>
+          <nav className="footer-links" aria-label="Resources">
+            <a href={LTB_URL} target="_blank" rel="noreferrer">
+              Landlord and Tenant Board
+            </a>
+            <a href={LEGAL_AID_URL} target="_blank" rel="noreferrer">
+              Legal Aid Ontario
+            </a>
+            <a href={REPO_URL} target="_blank" rel="noreferrer">
+              Source on GitHub
+            </a>
+          </nav>
         </div>
       </footer>
 

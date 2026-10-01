@@ -13,6 +13,8 @@
   --accent-soft: #e8eef7;
   --accent-text: #1f4d8c;
   --on-accent: #ffffff;
+  --bubble: #1f4d8c;
+  --on-bubble: #ffffff;
   --danger: #b42318;
   --danger-soft: #fef3f2;
   --danger-border: #fecdca;
@@ -32,7 +34,7 @@
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
 
   font: 15px/1.6 var(--sans);
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -41,8 +43,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark theme: follows the OS by default, or the toggle in the top bar, which sets
+   data-theme on <html> (see index.html and ThemeToggle). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0d1014;
     --surface: #151a20;
     --surface-2: #1b2129;
@@ -56,6 +60,8 @@
     --accent-soft: rgba(111, 156, 224, 0.12);
     --accent-text: #8ab0ea;
     --on-accent: #0d1014;
+    --bubble: #26446e;
+    --on-bubble: #f1f4f8;
     --danger: #f97066;
     --danger-soft: rgba(249, 112, 102, 0.1);
     --danger-border: rgba(249, 112, 102, 0.3);
@@ -66,7 +72,37 @@
     --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 20px 40px -8px rgba(0, 0, 0, 0.6);
     --ring: 0 0 0 3px rgba(111, 156, 224, 0.25);
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d1014;
+  --surface: #151a20;
+  --surface-2: #1b2129;
+  --text: #a8b1bd;
+  --text-muted: #8590a0;
+  --text-h: #f1f4f8;
+  --border: #252c35;
+  --border-strong: #334050;
+  --accent: #6f9ce0;
+  --accent-hover: #8ab0ea;
+  --accent-soft: rgba(111, 156, 224, 0.12);
+  --accent-text: #8ab0ea;
+  --on-accent: #0d1014;
+  --bubble: #26446e;
+  --on-bubble: #f1f4f8;
+  --danger: #f97066;
+  --danger-soft: rgba(249, 112, 102, 0.1);
+  --danger-border: rgba(249, 112, 102, 0.3);
+  --success: #47cd89;
+  --success-soft: rgba(71, 205, 137, 0.12);
+  --skeleton: #1f262f;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 40px -8px rgba(0, 0, 0, 0.6);
+  --ring: 0 0 0 3px rgba(111, 156, 224, 0.25);
+  color-scheme: dark;
 }
 
 * {
