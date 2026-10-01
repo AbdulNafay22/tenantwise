@@ -1,19 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { ApiError, askSituation } from "./api";
-import AnswerCard from "./AnswerCard";
 import FormDialog from "./FormDialog";
+import ResultCard from "./ResultCard";
 import {
-  AlertIcon,
   ArrowUpIcon,
   DoorIcon,
   GithubIcon,
   LogoMark,
-  PlusIcon,
   ShieldIcon,
   WalletIcon,
   WrenchIcon,
 } from "./icons";
-import type { ChatMessage, TenantInfo } from "./types";
+import type { Exchange, TenantInfo } from "./types";
 import "./App.css";
 
 const REPO_URL = "https://github.com/AbdulNafay22/tenantwise";
@@ -56,96 +54,66 @@ const STEPS = [
 let nextId = 0;
 function newId() {
   nextId += 1;
-  return `msg-${nextId}`;
+  return `q-${nextId}`;
 }
 
 export default function App() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Newest first: the latest answer always sits directly under the search box.
+  const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [draft, setDraft] = useState("");
-  const [isAsking, setIsAsking] = useState(false);
-  const [isSlow, setIsSlow] = useState(false);
   const [formSituation, setFormSituation] = useState<string | null>(null);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo>({
     tenant_name: "",
     tenant_address: "",
     landlord_name: "",
   });
-  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const resultsRef = useRef<HTMLElement>(null);
 
-  // The backend runs on Render's free tier, which spins down after 15 minutes idle --
-  // the first request after that can take 50+ seconds to wake back up. Surface a
-  // cold-start hint once a request has been pending a while so it reads as "working"
-  // rather than "broken".
-  useEffect(() => {
-    if (!isAsking) {
-      setIsSlow(false);
-      return;
-    }
-    const timer = setTimeout(() => setIsSlow(true), 6000);
-    return () => clearTimeout(timer);
-  }, [isAsking]);
+  const isAsking = exchanges.some((e) => e.status === "loading");
 
-  // Keep the newest message in view.
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages, isAsking]);
-
-  // Auto-grow the composer up to a cap.
+  // Auto-grow the search box up to a cap.
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }, [draft]);
 
-  async function submitSituation(situation: string) {
+  function update(id: string, patch: Partial<Exchange>) {
+    setExchanges((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  }
+
+  async function ask(situation: string, existingId?: string) {
     if (!situation || isAsking) return;
 
-    setMessages((prev) => [...prev, { id: newId(), role: "user", text: situation }]);
+    const id = existingId ?? newId();
+    if (existingId) {
+      update(id, { status: "loading", errorText: undefined });
+    } else {
+      setExchanges((prev) => [{ id, question: situation, status: "loading" }, ...prev]);
+    }
     setDraft("");
-    setIsAsking(true);
+    requestAnimationFrame(() =>
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
 
     try {
       const response = await askSituation(situation);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: newId(),
-          role: "assistant",
-          text: response.answer,
-          citations: response.citations,
-          sourceSituation: situation,
-        },
-      ]);
+      update(id, { status: "done", answer: response.answer, citations: response.citations });
     } catch (err) {
-      const text =
+      const errorText =
         err instanceof ApiError && err.status === 503
           ? "The assistant isn't available right now (the backend couldn't reach its language " +
             "model). Try again shortly."
           : "Something went wrong answering that. Please try rephrasing your situation.";
-      setMessages((prev) => [
-        ...prev,
-        { id: newId(), role: "error", text, sourceSituation: situation },
-      ]);
-    } finally {
-      setIsAsking(false);
+      update(id, { status: "error", errorText });
     }
-  }
-
-  function retry(situation: string, errorId: string) {
-    setMessages((prev) => {
-      // drop the failed exchange (the error and the user message before it)
-      const idx = prev.findIndex((m) => m.id === errorId);
-      return idx > 0 ? prev.slice(0, idx - 1) : prev;
-    });
-    submitSituation(situation);
   }
 
   function handleSubmit(event?: React.FormEvent) {
     event?.preventDefault();
-    if (draft.trim().length >= 10) submitSituation(draft.trim());
+    if (draft.trim().length >= 10) ask(draft.trim());
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -155,187 +123,124 @@ export default function App() {
     }
   }
 
-  function startOver() {
-    setMessages([]);
-    setDraft("");
-    inputRef.current?.focus();
+  function pickTopic(prompt: string) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    ask(prompt);
   }
 
-  const isEmpty = messages.length === 0 && !isAsking;
   const canSend = !isAsking && draft.trim().length >= 10;
+  const hasResults = exchanges.length > 0;
 
   return (
-    <div className="shell">
+    <div className="page">
       <header className="topbar">
-        <div className="topbar-inner">
-          <button type="button" className="brand" onClick={startOver} aria-label="TenantWise home">
+        <div className="container topbar-inner">
+          <a className="brand" href="/" aria-label="TenantWise home">
             <LogoMark size={28} />
             <span className="brand-name">TenantWise</span>
             <span className="brand-badge">Ontario</span>
-          </button>
-          <nav className="topbar-actions">
-            {!isEmpty && (
-              <button type="button" className="secondary-button compact" onClick={startOver}>
-                <PlusIcon size={16} /> <span className="hide-sm">New question</span>
-              </button>
-            )}
-            <a
-              className="icon-button"
-              href={REPO_URL}
-              target="_blank"
-              rel="noreferrer"
-              aria-label="View source on GitHub"
-            >
-              <GithubIcon size={18} />
-            </a>
-          </nav>
+          </a>
+          <a
+            className="icon-button"
+            href={REPO_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="View source on GitHub"
+          >
+            <GithubIcon size={18} />
+          </a>
         </div>
       </header>
 
-      <div className="scroll" ref={scrollRef}>
-        {isEmpty ? (
-          <main className="home">
-            <section className="hero">
-              <p className="hero-kicker">For tenants under Ontario's Residential Tenancies Act</p>
-              <h1>
-                Know your rights.
-                <br />
-                <span className="hero-accent">Then act on them.</span>
-              </h1>
-              <p className="hero-sub">
-                Describe your rental problem and get a plain-language answer grounded in real
-                Landlord and Tenant Board guidance, with every source cited.
-              </p>
-            </section>
+      <main>
+        <section className={`hero container ${hasResults ? "hero-compact" : ""}`}>
+          <p className="hero-kicker">For tenants under Ontario's Residential Tenancies Act</p>
+          <h1>
+            Know your rights. <span className="hero-accent">Then act on them.</span>
+          </h1>
+          <p className="hero-sub">
+            Describe your rental problem and get a plain-language answer grounded in real Landlord
+            and Tenant Board guidance, with every source cited.
+          </p>
 
-            <section aria-labelledby="topics-heading">
-              <h2 id="topics-heading" className="section-label">
-                Start with a common situation
-              </h2>
-              <div className="topic-grid">
-                {TOPICS.map(({ icon: Icon, title, prompt }) => (
-                  <button
-                    key={title}
-                    type="button"
-                    className="topic-card"
-                    onClick={() => submitSituation(prompt)}
-                  >
-                    <span className="topic-icon">
-                      <Icon size={18} />
-                    </span>
-                    <span className="topic-title">{title}</span>
-                    <span className="topic-prompt">"{prompt}"</span>
-                  </button>
-                ))}
-              </div>
-            </section>
+          <form className="search" onSubmit={handleSubmit}>
+            <textarea
+              ref={inputRef}
+              rows={1}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Describe what's happening with your rental..."
+              maxLength={4000}
+              aria-label="Describe your situation"
+            />
+            <button type="submit" className="send-button" disabled={!canSend} aria-label="Ask">
+              <ArrowUpIcon size={18} />
+            </button>
+          </form>
+          <p className="search-hint">Press Enter to ask. Shift + Enter for a new line.</p>
+        </section>
 
-            <section aria-labelledby="how-heading" className="how">
-              <h2 id="how-heading" className="section-label">
-                How it works
-              </h2>
-              <ol className="steps">
-                {STEPS.map((step, i) => (
-                  <li key={step.title} className="step">
-                    <span className="step-num">{i + 1}</span>
-                    <span>
-                      <span className="step-title">{step.title}</span>
-                      <span className="step-text">{step.text}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          </main>
-        ) : (
-          <main className="thread">
-            {messages.map((message) => {
-              if (message.role === "user") {
-                return (
-                  <div key={message.id} className="user-row">
-                    <p className="user-bubble">{message.text}</p>
-                  </div>
-                );
-              }
-              if (message.role === "error") {
-                return (
-                  <div key={message.id} className="error-card" role="alert">
-                    <AlertIcon size={18} />
-                    <p>{message.text}</p>
-                    {message.sourceSituation && (
-                      <button
-                        type="button"
-                        className="secondary-button compact"
-                        onClick={() => retry(message.sourceSituation!, message.id)}
-                        disabled={isAsking}
-                      >
-                        Try again
-                      </button>
-                    )}
-                  </div>
-                );
-              }
-              return (
-                <AnswerCard
-                  key={message.id}
-                  text={message.text}
-                  citations={message.citations ?? []}
-                  onDraftForm={
-                    message.sourceSituation
-                      ? () => setFormSituation(message.sourceSituation!)
-                      : undefined
-                  }
-                />
-              );
-            })}
-
-            {isAsking && (
-              <div className="answer answer-pending" aria-live="polite">
-                <div className="answer-avatar">
-                  <LogoMark size={28} />
-                </div>
-                <div className="answer-body">
-                  <p className="pending-label">
-                    <span className="spinner" /> Searching LTB sources and drafting an answer
-                  </p>
-                  <div className="skeleton" style={{ width: "92%" }} />
-                  <div className="skeleton" style={{ width: "84%" }} />
-                  <div className="skeleton" style={{ width: "60%" }} />
-                  {isSlow && (
-                    <p className="pending-hint">
-                      The server may be waking up from being idle. This can take up to a minute.
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </main>
+        {hasResults && (
+          <section className="results container" ref={resultsRef} aria-label="Answers">
+            {exchanges.map((exchange, i) => (
+              <ResultCard
+                key={exchange.id}
+                exchange={exchange}
+                defaultOpen={i === 0}
+                onRetry={() => ask(exchange.question, exchange.id)}
+                onDraftForm={() => setFormSituation(exchange.question)}
+              />
+            ))}
+          </section>
         )}
-      </div>
 
-      <footer className="dock">
-        <div className="dock-inner">
-        <form className="composer" onSubmit={handleSubmit}>
-          <textarea
-            ref={inputRef}
-            rows={1}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              isEmpty ? "Describe what's happening with your rental..." : "Describe another situation..."
-            }
-            maxLength={4000}
-            aria-label="Describe your situation"
-          />
-          <button type="submit" className="send-button" disabled={!canSend} aria-label="Send">
-            <ArrowUpIcon size={18} />
-          </button>
-        </form>
-        <p className="dock-note" title={DISCLAIMER}>
-          General information, not legal advice. For your specific case, contact a community legal
-          clinic or Tenant Duty Counsel.
-        </p>
+        <section className="container block" aria-labelledby="topics-heading">
+          <h2 id="topics-heading" className="section-label">
+            {hasResults ? "Try another common situation" : "Start with a common situation"}
+          </h2>
+          <div className="topic-grid">
+            {TOPICS.map(({ icon: Icon, title, prompt }) => (
+              <button
+                key={title}
+                type="button"
+                className="topic-card"
+                onClick={() => pickTopic(prompt)}
+                disabled={isAsking}
+              >
+                <span className="topic-icon">
+                  <Icon size={18} />
+                </span>
+                <span className="topic-title">{title}</span>
+                <span className="topic-prompt">"{prompt}"</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="container block" aria-labelledby="how-heading">
+          <h2 id="how-heading" className="section-label">
+            How it works
+          </h2>
+          <ol className="steps">
+            {STEPS.map((step, i) => (
+              <li key={step.title} className="step">
+                <span className="step-num">{i + 1}</span>
+                <span>
+                  <span className="step-title">{step.title}</span>
+                  <span className="step-text">{step.text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </main>
+
+      <footer className="site-footer">
+        <div className="container">
+          <p>
+            <strong>Not legal advice.</strong> {DISCLAIMER}
+          </p>
         </div>
       </footer>
 

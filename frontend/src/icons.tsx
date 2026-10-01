@@ -43,12 +43,6 @@ export const ArrowUpIcon = (p: IconProps) => (
   </Svg>
 );
 
-export const PlusIcon = (p: IconProps) => (
-  <Svg {...p}>
-    <path d="M12 5v14M5 12h14" />
-  </Svg>
-);
-
 export const ExternalIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -123,5 +117,11 @@ export const WalletIcon = (p: IconProps) => (
 export const ShieldIcon = (p: IconProps) => (
   <Svg {...p}>
     <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+  </Svg>
+);
+
+export const ChevronIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m6 9 6 6 6-6" />
   </Svg>
 );

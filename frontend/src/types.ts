@@ -21,15 +21,15 @@ export interface TenantInfo {
   landlord_name: string;
 }
 
-export type ChatRole = "user" | "assistant" | "error";
+export type ExchangeStatus = "loading" | "done" | "error";
 
-export interface ChatMessage {
+/** One question the tenant asked and what came back for it. The question text is
+ * also what a later "draft LTB application" click sends, so nothing is retyped. */
+export interface Exchange {
   id: string;
-  role: ChatRole;
-  text: string;
+  question: string;
+  status: ExchangeStatus;
+  answer?: string;
   citations?: Citation[];
-  /** The original situation text that produced this answer -- kept so a
-   * later "generate LTB application" click can be tied back to it without
-   * asking the user to retype anything. Only set on assistant messages. */
-  sourceSituation?: string;
+  errorText?: string;
 }
