@@ -13,13 +13,64 @@
 
 .container {
   width: 100%;
-  max-width: 760px;
+  max-width: 1160px;
   margin-inline: auto;
   padding-inline: 20px;
 }
 
-.block {
-  margin-top: 48px;
+/* Two columns on desktop: hero, search and answers on the left; "How it works"
+   pinned on the right so it's visible without scrolling. One column on mobile. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-areas:
+    "hero how"
+    "feed how";
+  column-gap: 56px;
+  align-items: start;
+}
+
+.hero {
+  grid-area: hero;
+}
+
+.how {
+  grid-area: how;
+  position: sticky;
+  top: 84px;
+  margin-top: 56px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.how .steps {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.how-note {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.how-note strong {
+  color: var(--text-h);
+}
+
+.feed {
+  grid-area: feed;
+  min-width: 0;
+}
+
+.topics {
+  margin-top: 40px;
 }
 
 /* ---------- Top bar ---------- */
@@ -29,8 +80,7 @@
   top: 0;
   z-index: 10;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 85%, transparent);
-  backdrop-filter: saturate(1.4) blur(10px);
+  background: var(--bg);
 }
 
 .topbar-inner {
@@ -69,7 +119,7 @@
 /* ---------- Hero + search ---------- */
 
 .hero {
-  padding-top: 64px;
+  padding-top: 56px;
 }
 
 .hero-kicker {
@@ -85,7 +135,6 @@
   font-size: clamp(34px, 6vw, 50px);
   line-height: 1.08;
   letter-spacing: -0.025em;
-  transition: font-size 0.2s;
 }
 
 .hero-accent {
@@ -187,7 +236,7 @@
 /* ---------- Results ---------- */
 
 .results {
-  margin-top: 32px;
+  margin-top: 28px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -316,13 +365,11 @@
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  transition: border-color 0.15s;
 }
 
 .topic-card:hover:not(:disabled) {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  border-color: var(--accent);
 }
 
 .topic-card:disabled {
@@ -701,8 +748,7 @@
 }
 
 .dialog::backdrop {
-  background: rgba(10, 14, 20, 0.45);
-  backdrop-filter: blur(2px);
+  background: rgba(10, 14, 20, 0.5);
 }
 
 .dialog[open] {
@@ -838,6 +884,32 @@
   justify-content: center;
 }
 
+/* ---------- Narrower screens ---------- */
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "hero"
+      "how"
+      "feed";
+  }
+
+  .how {
+    position: static;
+    margin-top: 24px;
+  }
+
+  .how .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Once there are answers, they matter more than the explainer on small screens. */
+  .has-results .how {
+    display: none;
+  }
+}
+
 /* ---------- Small screens ---------- */
 
 @media (max-width: 640px) {
@@ -857,13 +929,13 @@
     font-size: 16px;
   }
 
-  .block {
-    margin-top: 40px;
+  .topic-grid,
+  .how .steps {
+    grid-template-columns: 1fr;
   }
 
-  .topic-grid,
-  .steps {
-    grid-template-columns: 1fr;
+  .how {
+    padding: 16px;
   }
 
   .result-header,

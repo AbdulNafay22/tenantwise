@@ -152,8 +152,8 @@ export default function App() {
         </div>
       </header>
 
-      <main>
-        <section className={`hero container ${hasResults ? "hero-compact" : ""}`}>
+      <main className={`container layout ${hasResults ? "has-results" : ""}`}>
+        <section className={`hero ${hasResults ? "hero-compact" : ""}`}>
           <p className="hero-kicker">For tenants under Ontario's Residential Tenancies Act</p>
           <h1>
             Know your rights. <span className="hero-accent">Then act on them.</span>
@@ -181,44 +181,7 @@ export default function App() {
           <p className="search-hint">Press Enter to ask. Shift + Enter for a new line.</p>
         </section>
 
-        {hasResults && (
-          <section className="results container" ref={resultsRef} aria-label="Answers">
-            {exchanges.map((exchange, i) => (
-              <ResultCard
-                key={exchange.id}
-                exchange={exchange}
-                defaultOpen={i === 0}
-                onRetry={() => ask(exchange.question, exchange.id)}
-                onDraftForm={() => setFormSituation(exchange.question)}
-              />
-            ))}
-          </section>
-        )}
-
-        <section className="container block" aria-labelledby="topics-heading">
-          <h2 id="topics-heading" className="section-label">
-            {hasResults ? "Try another common situation" : "Start with a common situation"}
-          </h2>
-          <div className="topic-grid">
-            {TOPICS.map(({ icon: Icon, title, prompt }) => (
-              <button
-                key={title}
-                type="button"
-                className="topic-card"
-                onClick={() => pickTopic(prompt)}
-                disabled={isAsking}
-              >
-                <span className="topic-icon">
-                  <Icon size={18} />
-                </span>
-                <span className="topic-title">{title}</span>
-                <span className="topic-prompt">"{prompt}"</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="container block" aria-labelledby="how-heading">
+        <aside className="how" aria-labelledby="how-heading">
           <h2 id="how-heading" className="section-label">
             How it works
           </h2>
@@ -233,7 +196,50 @@ export default function App() {
               </li>
             ))}
           </ol>
-        </section>
+          <p className="how-note">
+            <strong>Not legal advice.</strong> General information only. For your specific case,
+            contact a community legal clinic or Tenant Duty Counsel.
+          </p>
+        </aside>
+
+        <div className="feed">
+          {hasResults && (
+            <section className="results" ref={resultsRef} aria-label="Answers">
+              {exchanges.map((exchange, i) => (
+                <ResultCard
+                  key={exchange.id}
+                  exchange={exchange}
+                  defaultOpen={i === 0}
+                  onRetry={() => ask(exchange.question, exchange.id)}
+                  onDraftForm={() => setFormSituation(exchange.question)}
+                />
+              ))}
+            </section>
+          )}
+
+          <section className="topics" aria-labelledby="topics-heading">
+            <h2 id="topics-heading" className="section-label">
+              {hasResults ? "Try another common situation" : "Start with a common situation"}
+            </h2>
+            <div className="topic-grid">
+              {TOPICS.map(({ icon: Icon, title, prompt }) => (
+                <button
+                  key={title}
+                  type="button"
+                  className="topic-card"
+                  onClick={() => pickTopic(prompt)}
+                  disabled={isAsking}
+                >
+                  <span className="topic-icon">
+                    <Icon size={18} />
+                  </span>
+                  <span className="topic-title">{title}</span>
+                  <span className="topic-prompt">"{prompt}"</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
       </main>
 
       <footer className="site-footer">
