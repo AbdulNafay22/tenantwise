@@ -1,26 +1,37 @@
 :root {
-  /* A calm, civic/legal palette -- deep blue instead of a generic template
-     purple, warm off-white instead of stark white, restrained borders. */
-  --bg: #faf9f6;
-  --bg-raised: #ffffff;
-  --text: #5b6472;
-  --text-h: #16202c;
-  --border: #e4e1d9;
+  /* Calm civic palette: deep blue accent, warm neutral surfaces. */
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --surface-2: #f1efea;
+  --text: #4b5563;
+  --text-muted: #6b7280;
+  --text-h: #111827;
+  --border: #e5e2db;
+  --border-strong: #d4d0c6;
   --accent: #1f4d8c;
-  --accent-hover: #163a6b;
-  --accent-bg: rgba(31, 77, 140, 0.07);
-  --accent-border: rgba(31, 77, 140, 0.32);
-  --code-bg: #f2f0e9;
-  --danger: #b3261e;
-  --danger-bg: rgba(179, 38, 30, 0.07);
-  --danger-border: rgba(179, 38, 30, 0.3);
-  --shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+  --accent-hover: #183e72;
+  --accent-soft: #e8eef7;
+  --accent-text: #1f4d8c;
+  --on-accent: #ffffff;
+  --danger: #b42318;
+  --danger-soft: #fef3f2;
+  --danger-border: #fecdca;
+  --success: #067647;
+  --success-soft: #ecfdf3;
+  --skeleton: #ebe8e2;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(16, 24, 40, 0.08), 0 2px 4px -2px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 20px 40px -8px rgba(16, 24, 40, 0.18);
+  --ring: 0 0 0 3px rgba(31, 77, 140, 0.18);
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
 
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
 
-  font: 16px/1.55 var(--sans);
+  font: 15px/1.6 var(--sans);
   color-scheme: light dark;
   color: var(--text);
   background: var(--bg);
@@ -32,21 +43,29 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0f1216;
-    --bg-raised: #171a20;
-    --text: #9aa4b2;
-    --text-h: #eef1f5;
-    --border: #262b33;
-    --accent: #7ea6e0;
-    --accent-hover: #9dbcea;
-    --accent-bg: rgba(126, 166, 224, 0.12);
-    --accent-border: rgba(126, 166, 224, 0.35);
-    --code-bg: #1b1f27;
-    --danger: #e5877e;
-    --danger-bg: rgba(229, 135, 126, 0.1);
-    --danger-border: rgba(229, 135, 126, 0.3);
-    --shadow:
-      0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --bg: #0d1014;
+    --surface: #151a20;
+    --surface-2: #1b2129;
+    --text: #a8b1bd;
+    --text-muted: #8590a0;
+    --text-h: #f1f4f8;
+    --border: #252c35;
+    --border-strong: #334050;
+    --accent: #6f9ce0;
+    --accent-hover: #8ab0ea;
+    --accent-soft: rgba(111, 156, 224, 0.12);
+    --accent-text: #8ab0ea;
+    --on-accent: #0d1014;
+    --danger: #f97066;
+    --danger-soft: rgba(249, 112, 102, 0.1);
+    --danger-border: rgba(249, 112, 102, 0.3);
+    --success: #47cd89;
+    --success-soft: rgba(71, 205, 137, 0.12);
+    --skeleton: #1f262f;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 20px 40px -8px rgba(0, 0, 0, 0.6);
+    --ring: 0 0 0 3px rgba(111, 156, 224, 0.25);
   }
 }
 
@@ -54,34 +73,54 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  height: 100%;
+  background: var(--bg);
 }
 
 #root {
-  /* Fixed height, not min-height -- .app below uses flex:1 to fill exactly
-     this box so its internal chat-log can scroll instead of the whole page
-     growing past the viewport. */
   height: 100svh;
-  display: flex;
-  flex-direction: column;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--serif);
-  font-weight: 600;
   color: var(--text-h);
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-p {
-  margin: 0;
 }
 
 button,
-input {
-  font-family: inherit;
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: var(--accent-text);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+::selection {
+  background: var(--accent-soft);
 }
