@@ -11,7 +11,7 @@ import {
   WalletIcon,
   WrenchIcon,
 } from "./icons";
-import type { Exchange, TenantInfo } from "./types";
+import type { Exchange, HistoryTurn, TenantInfo, Turn } from "./types";
 import "./App.css";
 
 const REPO_URL = "https://github.com/AbdulNafay22/tenantwise";
@@ -70,7 +70,7 @@ export default function App() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
 
-  const isAsking = exchanges.some((e) => e.status === "loading");
+  const isAsking = exchanges.some((e) => e.turns.some((t) => t.status === "loading"));
 
   // Auto-grow the search box up to a cap.
   useEffect(() => {
@@ -80,35 +80,72 @@ export default function App() {
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }, [draft]);
 
-  function update(id: string, patch: Partial<Exchange>) {
-    setExchanges((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  function updateTurn(exchangeId: string, turnId: string, patch: Partial<Turn>) {
+    setExchanges((prev) =>
+      prev.map((e) =>
+        e.id === exchangeId
+          ? { ...e, turns: e.turns.map((t) => (t.id === turnId ? { ...t, ...patch } : t)) }
+          : e,
+      ),
+    );
   }
 
-  async function ask(situation: string, existingId?: string) {
-    if (!situation || isAsking) return;
-
-    const id = existingId ?? newId();
-    if (existingId) {
-      update(id, { status: "loading", errorText: undefined });
-    } else {
-      setExchanges((prev) => [{ id, question: situation, status: "loading" }, ...prev]);
-    }
-    setDraft("");
-    requestAnimationFrame(() =>
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-    );
+  async function runTurn(exchange: Exchange, turn: Turn) {
+    // Everything answered before this turn becomes the follow-up's context.
+    const priorTurns = exchange.turns.slice(0, exchange.turns.findIndex((t) => t.id === turn.id));
+    const history: HistoryTurn[] = priorTurns
+      .filter((t) => t.status === "done" && t.answer)
+      .map((t) => ({
+        question: (t.followUp ?? exchange.question).slice(0, 1000),
+        answer: t.answer!.slice(0, 6000),
+      }))
+      .slice(-6);
 
     try {
-      const response = await askSituation(situation);
-      update(id, { status: "done", answer: response.answer, citations: response.citations });
+      const response = await askSituation(
+        exchange.question,
+        turn.followUp ? { question: turn.followUp, history } : undefined,
+      );
+      updateTurn(exchange.id, turn.id, {
+        status: "done",
+        answer: response.answer,
+        citations: response.citations,
+        followUps: response.follow_ups ?? [],
+      });
     } catch (err) {
       const errorText =
         err instanceof ApiError && err.status === 503
           ? "The assistant isn't available right now (the backend couldn't reach its language " +
             "model). Try again shortly."
-          : "Something went wrong answering that. Please try rephrasing your situation.";
-      update(id, { status: "error", errorText });
+          : "Something went wrong answering that. Please try rephrasing.";
+      updateTurn(exchange.id, turn.id, { status: "error", errorText });
     }
+  }
+
+  function ask(situation: string) {
+    if (!situation || isAsking) return;
+    const turn: Turn = { id: newId(), status: "loading" };
+    const exchange: Exchange = { id: newId(), question: situation, turns: [turn] };
+    setExchanges((prev) => [exchange, ...prev]);
+    setDraft("");
+    requestAnimationFrame(() =>
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
+    runTurn(exchange, turn);
+  }
+
+  function askFollowUp(exchange: Exchange, question: string) {
+    if (!question || isAsking) return;
+    const turn: Turn = { id: newId(), followUp: question, status: "loading" };
+    const next = { ...exchange, turns: [...exchange.turns, turn] };
+    setExchanges((prev) => prev.map((e) => (e.id === exchange.id ? next : e)));
+    runTurn(next, turn);
+  }
+
+  function retry(exchange: Exchange, turn: Turn) {
+    if (isAsking) return;
+    updateTurn(exchange.id, turn.id, { status: "loading", errorText: undefined });
+    runTurn(exchange, turn);
   }
 
   function handleSubmit(event?: React.FormEvent) {
@@ -178,7 +215,7 @@ export default function App() {
               <ArrowUpIcon size={18} />
             </button>
           </form>
-          <p className="search-hint">Press Enter to ask. Shift + Enter for a new line.</p>
+          <p className="search-hint">Each situation starts its own conversation. Press Enter to ask, Shift + Enter for a new line.</p>
         </section>
 
         <aside className="how" aria-labelledby="how-heading">
@@ -210,7 +247,9 @@ export default function App() {
                   key={exchange.id}
                   exchange={exchange}
                   defaultOpen={i === 0}
-                  onRetry={() => ask(exchange.question, exchange.id)}
+                  isBusy={isAsking}
+                  onRetry={(turn) => retry(exchange, turn)}
+                  onFollowUp={(question) => askFollowUp(exchange, question)}
                   onDraftForm={() => setFormSituation(exchange.question)}
                 />
               ))}

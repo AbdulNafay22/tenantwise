@@ -12,7 +12,15 @@ export interface Citation {
 export interface AskResponse {
   answer: string;
   citations: Citation[];
+  /** Suggested next questions. Absent from older API responses. */
+  follow_ups?: string[];
   disclaimer: string;
+}
+
+/** An earlier question/answer pair, sent back so a follow-up builds on it. */
+export interface HistoryTurn {
+  question: string;
+  answer: string;
 }
 
 export interface TenantInfo {
@@ -21,15 +29,24 @@ export interface TenantInfo {
   landlord_name: string;
 }
 
-export type ExchangeStatus = "loading" | "done" | "error";
+export type TurnStatus = "loading" | "done" | "error";
 
-/** One question the tenant asked and what came back for it. The question text is
- * also what a later "draft LTB application" click sends, so nothing is retyped. */
+/** One answer inside an exchange: the first answer to the situation, or a follow-up. */
+export interface Turn {
+  id: string;
+  /** The follow-up question; undefined for the first answer to the situation itself. */
+  followUp?: string;
+  status: TurnStatus;
+  answer?: string;
+  citations?: Citation[];
+  followUps?: string[];
+  errorText?: string;
+}
+
+/** One situation the tenant described, plus every follow-up asked about it. The
+ * situation text is also what "draft LTB application" sends, so nothing is retyped. */
 export interface Exchange {
   id: string;
   question: string;
-  status: ExchangeStatus;
-  answer?: string;
-  citations?: Citation[];
-  errorText?: string;
+  turns: Turn[];
 }

@@ -1,4 +1,4 @@
-import type { AskResponse, TenantInfo } from "./types";
+import type { AskResponse, HistoryTurn, TenantInfo } from "./types";
 
 // Vite exposes only vars prefixed VITE_ to client code. Falls back to the
 // FastAPI dev server's default port so `npm run dev` works out of the box
@@ -23,11 +23,17 @@ async function parseErrorDetail(response: Response): Promise<string> {
   return `Request failed with status ${response.status}`;
 }
 
-export async function askSituation(situation: string): Promise<AskResponse> {
+export async function askSituation(
+  situation: string,
+  followUp?: { question: string; history: HistoryTurn[] },
+): Promise<AskResponse> {
+  const body = followUp
+    ? { situation, follow_up: followUp.question, history: followUp.history }
+    : { situation };
   const response = await fetch(`${API_BASE_URL}/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ situation }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
